@@ -1,19 +1,18 @@
+from sqlalchemy.orm import Session
+from typing import Any
+from fastapi import APIRouter, HTTPException, Depends
+from database import crud
+from .schemas import user_schema
 
-from typing import Any, List
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr
+from database.config import SessionLocal
 
-class UserSimple(BaseModel):
-    username: str
-    avatar_url: str
 
-class UserOut(UserSimple):
-    email: EmailStr
-    friends_list: List[str] = []
-    block_list: List[str] = []
-
-class UserIn(UserOut):
-    hashWord: str
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
     
 
 router = APIRouter(
@@ -23,12 +22,8 @@ router = APIRouter(
 )
 
 @router.get('/')
-async def get_users():
-    return [
-        {"username": "BlackMagic666"},
-        {"username": "BlueEyedNeverBrokeAgain"},
-        {"username": "EyesOnMillenium"}
-    ]
+async def get_users(db: Session = Depends(get_db)):
+    return crud.get_users(db=db)
 
 
 @router.get("/me")
@@ -43,6 +38,9 @@ async def returnNotFound():
 async def get_user(username: str):
     return {"username": username}
 
-@router.post("/signup", response_model=UserOut)
-async def create_user(user: UserIn) -> Any:
-    return user
+@router.post("/signup", response_model=user_schema.UserOut)
+async def create_user(user: user_schema.UserIn, db: Session = Depends(get_db)) -> Any:
+    db_user = crud.get_user_by_email(db, user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+    return crud.create_user(db=db, user=user)

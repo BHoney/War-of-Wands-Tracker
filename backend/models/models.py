@@ -13,6 +13,7 @@ class User(Base):
     username = Column(String(50), unique=True)
     email = Column(String, unique=True)
     password_hash = Column(String)
+    avatar = Column(String)
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
 
 user_preference = Table(

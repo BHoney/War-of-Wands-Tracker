@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from routers.users import UserOut, UserSimple
+from .schemas import user_schema
 
 
 router = APIRouter(
@@ -16,8 +16,8 @@ router = APIRouter(
 class SimpleGameData(BaseModel):
     id: int
     match_date: datetime
-    players: list[UserSimple]
-    winner: UserSimple
+    players: list[user_schema.UserSimple]
+    winner: user_schema.UserSimple
 
     
 

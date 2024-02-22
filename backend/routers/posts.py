@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from routers.users import UserSimple
+from .schemas import user_schema
 
 
 router = APIRouter(
@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 class Comment(BaseModel):
-    author: UserSimple
+    author: user_schema.UserSimple
     tags: Optional[List[str]]
     body: str
     date_posted: datetime
