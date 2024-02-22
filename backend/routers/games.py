@@ -4,8 +4,15 @@ from datetime import datetime
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from .schemas import user_schema
+from database.config import SessionLocal
+from .schemas import user_schema as user, games_schema as game
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 router = APIRouter(
     prefix="/games",
@@ -13,11 +20,7 @@ router = APIRouter(
     responses={404: {"description": "Game data not found"}}
 )
 
-class SimpleGameData(BaseModel):
-    id: int
-    match_date: datetime
-    players: list[user_schema.UserSimple]
-    winner: user_schema.UserSimple
+
 
     
 
@@ -55,7 +58,7 @@ async def get_all_games():
     ]
 
 @router.post("/insert-game")
-async def insert_game_data(data: SimpleGameData):
+async def insert_game_data(data: game.SimpleGameData):
     return data.model_dump()
 
 @router.get("/{game_id}")

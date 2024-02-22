@@ -25,18 +25,23 @@ router = APIRouter(
 async def get_users(db: Session = Depends(get_db)):
     return crud.get_users(db=db)
 
-
 @router.get("/me")
 async def get_user_me():
     return {"username": "currentUser"}
 
-@router.get("/error_code_test")
-async def returnNotFound():
-    raise HTTPException(status_code=404)
-
 @router.get("/{username}")
-async def get_user(username: str):
-    return {"username": username}
+async def get_user(username: str, db:Session = Depends(get_db)):
+    db_user = crud.get_user_by_username(db=db, username=username)
+    if not db_user:
+        raise HTTPException(status_code=404)
+    return db_user 
+
+@router.put("/{id}/rank", response_model=user_schema.UserOut)
+async def update_rank(id: int, points: int, db:Session = Depends(get_db)):
+    db_user = crud.get_user(db=db, user_id=id)
+    if db_user:
+        crud.update_user_rank(db=db, user_id=id, points_gained=points)
+        return db_user
 
 @router.post("/signup", response_model=user_schema.UserOut)
 async def create_user(user: user_schema.UserIn, db: Session = Depends(get_db)) -> Any:

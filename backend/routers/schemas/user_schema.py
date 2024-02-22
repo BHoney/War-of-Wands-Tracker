@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, NonNegativeInt
 
 class UserSimple(BaseModel):
     username: str
@@ -9,6 +9,7 @@ class UserSimple(BaseModel):
 
 class UserOut(UserSimple):
     email: EmailStr 
+    rank_points: NonNegativeInt
 
     class Config:
         orm_mode = True
