@@ -1,5 +1,10 @@
 from fastapi import FastAPI
+from database.config import engine
 from routers import users, games, posts
+from models import models
+
+
+db_metadata = models.Base.metadata.create_all(bind=engine)
 
 #FastAPI set up
 app = FastAPI()

@@ -1,56 +1,58 @@
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Table
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
-from ctypes import Array
-from datetime import datetime
-from turtle import back
-from typing import List
-from sqlalchemy import ARRAY, UUID, Column, DateTime, ForeignKey, Integer, String, Table, Uuid, func
-from .database import Base
-from sqlalchemy.orm import mapped_column, Mapped, relationship
-
+Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
-    id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True)
-    signup_date: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
-    last_online: Mapped[DateTime] = mapped_column(DateTime, onupdate=datetime.now())
-    username: Mapped[str] = mapped_column(String(50), unique=True)
-    email: Mapped[String] = mapped_column(String, unique=True)
-    hashword: Mapped[str] = mapped_column(String)
-    posts: Mapped[List["Post"]] = relationship(back_populates="user")
- 
+    id = Column(Integer, primary_key=True)
+    signup_date = Column(DateTime, server_default=func.now())
+    last_online = Column(DateTime, onupdate=func.now())
+    username = Column(String(50), unique=True)
+    email = Column(String, unique=True)
+    password_hash = Column(String)
+    posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
+
 user_preference = Table(
-     "user_preference",
-     Column("id", Integer, primary_key=True),
-     Column("user_id", ForeignKey("user.id")),
-     Column("name", String(100), nullable=False),
-     Column("value", String(100))
- )
+    "user_preference",
+    Base.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", ForeignKey("users.id")),
+    Column("name", String(100), nullable=False),
+    Column("value", String(100))
+)
 
 class Post(Base):
     __tablename__ = "posts"
-    id: Mapped[Uuid] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    body: Mapped[str] = mapped_column(String(40000), nullable=False)
-    tags = Column(ARRAY(String))
-    date_posted: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    kudos: Mapped[int] = mapped_column(Integer, default=1)
-    author_id: Mapped[Uuid] = mapped_column(ForeignKey("users.id"), nullable=False)
-    author: Mapped["User"] = relationship(back_populates="user")
+    id = Column(Integer, primary_key=True)
+    body = Column(String(40000), nullable=False)
+    date_posted = Column(DateTime, server_default=func.now())
+    kudos = Column(Integer, default=1)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    author = relationship("User", back_populates="posts")
 
 class MatchData(Base):
     __tablename__ = "match_data"
-    id: Mapped[Uuid] = mapped_column(Uuid, primary_key=True)
-    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    winner_id: Mapped[Uuid] = mapped_column(ForeignKey("user.id"))
-    players: Mapped["MatchPlayers"] = relationship('User', uselist=True, backref="users", secondary="match_players")
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime, nullable=False)
+    winner_id = Column(Integer, ForeignKey("users.id"))
+    players = relationship("Player", back_populates="match", cascade="all, delete-orphan")
 
-class MatchPlayers(Base):
-    __tablename__ = "match_players"
-    user_id: Mapped[Uuid] = mapped_column(UUID(as_uuid=True), ForeignKey('user.id'))
-    match_id: Mapped[Uuid] = mapped_column(UUID(as_uuid=True), ForeignKey('match_data.id'))
-    character: Mapped["Character"] = mapped_column(Integer, ForeignKey('characters.id'))
+class Player(Base):
+    __tablename__ = "players"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    character_id = Column(Integer, ForeignKey("characters.id"))
+    match_id = Column(Integer, ForeignKey("match_data.id"))
+    user = relationship("User")
+    character = relationship("Character")
+    match = relationship("MatchData", back_populates="players")
+
 
 class Character(Base):
     __tablename__ = "characters"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[String] = mapped_column(String, unique=True, nullable=False)
-    play_data: Mapped["MatchPlayers"] = relationship("match_players", backref="character")
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+    play_data = relationship("Player", back_populates="character")
